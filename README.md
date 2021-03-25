@@ -1,14 +1,18 @@
-# numpywren
-Scientific Computing with Infinite Ram.
+# Lithops Array (Under developemnt)
 
-Forked from [https://github.com/Vaishaal/numpywren](https://github.com/Vaishaal/numpywren)
+Lithops array is a lithops version of numpywren
 
 ## Installation
 ```bash
 $ git clone https://github.com/JosepSampe/numpywren
 $ python3 setup.py install
-$ numpywren setup
 ```
+
+# numpywren
+Scientific Computing with Infinite Ram.
+
+Forked from [https://github.com/Vaishaal/numpywren](https://github.com/Vaishaal/numpywren)
+
 
 ## What is this?
 Numpywren is scientific computing framework built on top of the serverless execution framework [pywren](https://pywren.io).
