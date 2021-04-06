@@ -14,16 +14,13 @@ setup(
     name='numpywren',
     version=__version__,
     author='Vaishaal Shankar',
-    description='Run scientific computing applications transparently on AWS Lambda and other cloud services',
+    description='Run scientific computing applications transparently on the Cloud using Lithops',
     author_email='vaishaal@gmail.com',
     packages=find_packages(),
     install_requires=[
-        'Click', 'PyYAML',
-        'enum34', 'flaky', 'glob2',
-        'watchtower', 'tblib', 'pywren',
-        'cloudpickle', 'dill', 'sympy', 'redis', 'astor', 'sklearn', 'pytest',
-        'numpy', 'boto3', 's3transfer',
-        'botocore', 'aiobotocore'
+        'Click', 'PyYAML', 'flaky', 'lithops', 'dill',
+        'sympy', 'redis', 'astor', 'sklearn', 'pytest',
+        'numpy',
     ],
     entry_points={
         'console_scripts': ['numpywren=numpywren.scripts.cli:main']

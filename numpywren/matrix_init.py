@@ -16,7 +16,7 @@ def local_numpy_init(X_local, shard_sizes, n_jobs=1, symmetric=False, exists=Fal
     else:
         bigm = BigSymmetricMatrix(key, shape=X_local.shape, shard_sizes=shard_sizes, dtype=X_local.dtype, write_header=write_header, bucket=bucket)
     if (not exists):
-        return shard_matrix(bigm, X_local, n_jobs=n_jobs, executor=executor, overwrite=overwrite)
+        return shard_matrix(bigm, X_local, n_jobs=n_jobs, overwrite=overwrite)
     else:
         return bigm
 

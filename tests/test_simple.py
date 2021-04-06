@@ -2,6 +2,10 @@ from numpywren.matrix import BigMatrix
 from numpywren.matrix_init import local_numpy_init
 import numpy as np
 import unittest
+from lithops.utils import setup_lithops_logger
+
+
+setup_lithops_logger('DEBUG')
 
 
 class SimpleTestClass(unittest.TestCase):

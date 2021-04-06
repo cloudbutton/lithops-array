@@ -1,17 +1,24 @@
 # Lithops Array (Under developemnt)
 
-Lithops array is a lithops version of numpywren
+Lithops array is a lithops version of [numpywren](https://github.com/Vaishaal/numpywren)
+
 
 ## Installation
 ```bash
-$ git clone https://github.com/JosepSampe/numpywren
+$ git clone https://github.com/cloudbutton/lithops-array
 $ python3 setup.py install
 ```
 
+## Status
+
+Currently, these tests work with Lithops:
+
+`python3 tests/test_gemm.py`
+`python3 tests/test_simple.py`
+
+
 # numpywren
 Scientific Computing with Infinite Ram.
-
-Forked from [https://github.com/Vaishaal/numpywren](https://github.com/Vaishaal/numpywren)
 
 
 ## What is this?

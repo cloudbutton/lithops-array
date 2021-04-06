@@ -1,15 +1,14 @@
 import concurrent.futures as fs
 import itertools
-import time
 import numpy as np
 import hashlib
 import pickle
 import inspect
-import multiprocessing
+import multiprocessing as mp
 import lithops
 from lithops.storage.utils import StorageNoSuchKeyError
 
-cpu_count = multiprocessing.cpu_count()
+cpu_count = mp.cpu_count()
 
 
 class MmapArray():
@@ -141,15 +140,15 @@ def get_blocks_mmap(bigm, block_idxs, local_idxs, mmap_loc, mmap_shape):
     return (mmap_loc, mmap_shape, bigm.dtype)
 
 
-def get_local_matrix(bigm, workers=cpu_count, mmap_loc=None, big_axis=0):
+def get_local_matrix(bigm, workers=cpu_count, mmap_loc=None):
     hash_key = hash_string(bigm.key)
     if mmap_loc is None:
         mmap_loc = "/dev/shm/{0}".format(hash_key)
 
     blocks_to_get = [bigm._block_idxs(i) for i in range(len(bigm.shape))]
     big_axis = np.argmax([len(bigm._block_idxs(i)) for i in range(len(bigm.shape))])
-
-    futures = get_matrix_blocks_full_async(bigm, mmap_loc, *blocks_to_get, big_axis=big_axis)
+    executor = fs.ThreadPoolExecutor(max_workers=workers)
+    futures = get_matrix_blocks_full_async(bigm, mmap_loc, blocks_to_get, executor=executor, big_axis=big_axis)
 
     fs.wait(futures)
     [f.result() for f in futures]
@@ -162,9 +161,9 @@ def get_col(bigm, col, workers=cpu_count, mmap_loc=None):
     hash_key = hash_string(bigm.key)
     if mmap_loc is None:
         mmap_loc = "/dev/shm/{0}".format(hash_key)
-    executor = fs.ProcessPoolExecutor(max_workers=workers)
+    executor = fs.ThreadPoolExecutor(max_workers=workers)
     blocks_to_get = [bigm._block_idxs(0), [col]]
-    futures = get_matrix_blocks_full_async(bigm, mmap_loc, *blocks_to_get, executor=executor, big_axis=0)
+    futures = get_matrix_blocks_full_async(bigm, mmap_loc, blocks_to_get, executor=executor, big_axis=0)
     fs.wait(futures)
     [f.result() for f in futures]
     return load_mmap(*futures[0].result())
@@ -182,7 +181,7 @@ def put_col(bigm, col, workers=cpu_count, mmap_loc=None, big_axis=0):
     hash_key = hash_string(bigm.key + str(col))
     if mmap_loc is None:
         mmap_loc = "/dev/shm/{0}".format(hash_key)
-    executor = fs.ProcessPoolExecutor(max_workers=workers)
+    executor = fs.ThreadPoolExecutor(max_workers=workers)
     block_idx_blocks = list(zip(bigm.block_idxs, bigm.blocks))
     blocks_to_put = [x for x in block_idx_blocks if x[0][1] == col]
 
@@ -201,9 +200,9 @@ def get_row(bigm, row, workers=cpu_count, mmap_loc=None):
     hash_key = hash_string(bigm.key)
     if mmap_loc is None:
         mmap_loc = "/dev/shm/{0}".format(hash_key)
-    executor = fs.ProcessPoolExecutor(max_workers=workers)
+    executor = fs.ThreadPoolExecutor(max_workers=workers)
     blocks_to_get = [[row], bigm._block_idxs(1)]
-    futures = get_matrix_blocks_full_async(bigm, mmap_loc, *blocks_to_get, executor=executor, big_axis=1)
+    futures = get_matrix_blocks_full_async(bigm, mmap_loc, blocks_to_get, executor=executor, big_axis=1)
     fs.wait(futures)
     [f.result() for f in futures]
     return load_mmap(*futures[0].result())
@@ -214,9 +213,9 @@ def get_rows(bigm, rows, workers=cpu_count, mmap_loc=None):
     hash_key = hash_string(bigm.key)
     if mmap_loc is None:
         mmap_loc = "/dev/shm/{0}".format(hash_key)
-    executor = fs.ProcessPoolExecutor(max_workers=workers)
+    executor = fs.ThreadPoolExecutor(max_workers=workers)
     blocks_to_get = [rows, bigm._block_idxs(1)]
-    futures = get_matrix_blocks_full_async(bigm, mmap_loc, *blocks_to_get, executor=executor, big_axis=1)
+    futures = get_matrix_blocks_full_async(bigm, mmap_loc, blocks_to_get, executor=executor, big_axis=1)
     fs.wait(futures)
     [f.result() for f in futures]
     return load_mmap(*futures[0].result())
@@ -234,7 +233,7 @@ def put_row(bigm, data, row, workers=cpu_count, mmap_loc=None, big_axis=0):
     hash_key = hash_string(bigm.key + str(row))
     if mmap_loc is None:
         mmap_loc = "/dev/shm/{0}".format(hash_key)
-    executor = fs.ProcessPoolExecutor(max_workers=workers)
+    executor = fs.ThreadPoolExecutor(max_workers=workers)
     block_idx_blocks = list(zip(bigm.block_idxs, bigm.blocks))
     blocks_to_put = [x for x in block_idx_blocks if x[0][0] == row]
 
@@ -248,7 +247,7 @@ def put_row(bigm, data, row, workers=cpu_count, mmap_loc=None, big_axis=0):
     return
 
 
-def get_matrix_blocks_full_async(bigm, mmap_loc, *blocks_to_get, big_axis=0, executor=None, workers=cpu_count):
+def get_matrix_blocks_full_async(bigm, mmap_loc, blocks_to_get, executor, big_axis=0, workers=cpu_count):
     '''
         Download blocks from bigm using multiprocess and memmap to maximize S3 bandwidth
         * blocks_to_get is a list equal in length to the number of dimensions of bigm
@@ -280,7 +279,7 @@ def get_matrix_blocks_full_async(bigm, mmap_loc, *blocks_to_get, big_axis=0, exe
     chunks = list(chunk(blocks_to_get[big_axis], chunk_size))
     blocks_to_get = list(blocks_to_get)
 
-    ex = fs.ProcessPoolExecutor(max_workers=workers)
+    ex = executor
     futures = []
     for c in chunks:
         c = sorted(c)
